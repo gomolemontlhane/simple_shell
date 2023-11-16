@@ -1,23 +1,28 @@
 #include "shell.h"
 
 /**
- *execute_command - Executes the specified command
+ *execute_command - Executes a command in the shell
  *@command: The command to execute
  */
 void execute_command(char *command)
 {
-	/*Check if the command is "exit" */
-	if (strcmp(command, "exit") == 0)
+	pid_t pid;
+	int status;
+
+	pid = fork();
+
+	if (pid == -1)
 	{
-		free(command); /*Free allocated memory for command */
-		exit(EXIT_SUCCESS);
+		perror("fork");
+		exit(EXIT_FAILURE);
 	}
 
-	if (access(command, X_OK) == 0)
+	if (pid == 0)
 	{
-		char **args = malloc(2 * sizeof(char *));
+		/*Child process */
+		char **args = malloc(sizeof(char *) * 2);
 
-		if (args == NULL)
+		if (!args)
 		{
 			perror("malloc");
 			exit(EXIT_FAILURE);
@@ -26,51 +31,59 @@ void execute_command(char *command)
 		args[0] = command;
 		args[1] = NULL;
 
-		execute_child_process(args);
+		execute_child_process(command, args);
 	}
 	else
 	{
-		printf("%s: command not found\n", command);
+		/*Parent process */
+		wait_for_child_process(pid, &status);
+		handle_child_process_exit(command, status);
 	}
 }
 
 /**
  *execute_child_process - Executes the command in the child process
- *@args: The array of arguments for execve
+ *@command: The command to execute
+ *@args: Array of arguments for the command
  */
-void execute_child_process(char **args)
+void execute_child_process(char *command, char **args)
 {
-	pid_t child_pid = fork();
-
-	if (child_pid == -1)
+	if (execve(command, args, environ) == -1)
 	{
-		perror("fork");
-		free(args);
-		exit(EXIT_FAILURE);
-	}
-
-	if (child_pid == 0)
-	{
-		/*In the child process */
-		execve(args[0], args, environ);
-
-		/*If execve fails */
 		perror("execve");
-		free(args);
 		exit(EXIT_FAILURE);
 	}
-	else
+
+	free(args);
+}
+
+/**
+ *wait_for_child_process - Waits for the child process to finish
+ *@pid: Process ID of the child process
+ *@status: Pointer to the status variable
+ */
+void wait_for_child_process(pid_t pid, int *status)
+{
+	if (waitpid(pid, status, 0) == -1)
 	{
-		/*In the parent process */
-		wait_for_child_process();
-		free(args);
+		perror("Error");
+		exit(EXIT_FAILURE);
 	}
 }
 
 /**
- *wait_for_child_process - Waits for the child process to complete
+ *handle_child_process_exit - Handles the exit status of the child process
+ *@command: The command that was executed
+ *@status: The exit status of the child process
  */
-void wait_for_child_process(void)
+void handle_child_process_exit(char *command, int status)
 {
-	wait(NULL);
+	if (WIFEXITED(status) && WEXITSTATUS(status) == 127)
+	{
+		fprintf(stderr, "%s: command not found\n", command);
+	}
+	else if (WIFSIGNALED(status))
+	{
+		fprintf(stderr, "%s: killed by signal %d\n", command, WTERMSIG(status));
+	}
 }
