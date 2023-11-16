@@ -1,38 +1,84 @@
 #include "shell.h"
 
-/**
- *main - Entry point for the simple shell program
- *@argc: The number of command-line arguments
- *@argv: An array of strings containing the command-line arguments
- *
- *Return: Always 0
- */
-int main(int argc, char **argv)
+int main(void)
 {
-	char *command;
+	char *prompt = "(Eshell) $ ";
+	char *lineptr = NULL, *lineptr_copy = NULL;
+	size_t n = 0;
+	ssize_t nchars_read;
+	const char *delim = " \n";
+	int num_tokens = 0;
+	char *token;
+	int i;
 
-	if (argc > 1) /*Check if command-line arguments are provided */
+	char **argv;
+
+	/*Create a loop for the shell's prompt */
+	while (1)
 	{
-		command = read_command_from_file(argv[1]); /*Read command from file */
-		execute_command(command); /*Execute the command */
-		free(command); /*Free the allocated memory for the command */
-	}
-	else
-	{
-		/*Interactive mode */
-		while (1)
+		printf("%s", prompt);
+		nchars_read = getline(&lineptr, &n, stdin);
+		/*check if the getline function failed or reached EOF or user use CTRL + D */
+		if (nchars_read == -1)
 		{
-			display_prompt(); /*Display the prompt */
-			command = read_command(); /*Read user input */
-
-			if (!command)
-				break; /*Exit the loop if Ctrl+D is pressed */
-
-			tokenize_command(command); /*Tokenize the command */
-			execute_command(command); /*Execute the command */
-			free(command); /*Free the allocated memory for the command */
+			printf("Exiting shell....\n");
+			return (-1);
 		}
+
+		/*allocate space for a copy of the lineptr */
+		lineptr_copy = malloc(sizeof(char) *nchars_read);
+		if (lineptr_copy == NULL)
+		{
+			perror("tsh: memory allocation error");
+			return (-1);
+		}
+
+		/*copy lineptr to lineptr_copy */
+		strcpy(lineptr_copy, lineptr);
+
+		/**********split the string (lineptr) into an array of words ********/
+		/*calculate the total number of tokens */
+		token = strtok(lineptr, delim);
+
+		while (token != NULL)
+		{
+			num_tokens++;
+			token = strtok(NULL, delim);
+		}
+
+		num_tokens++;
+
+		/*Allocate space to hold the array of strings */
+		argv = malloc(sizeof(char*) *num_tokens);
+
+		/*Store each token in the argv array */
+		token = strtok(lineptr_copy, delim);
+
+		for (i = 0; token != NULL; i++)
+		{
+			argv[i] = malloc(sizeof(char) *(strlen(token) + 1));
+			strcpy(argv[i], token);
+
+			token = strtok(NULL, delim);
+		}
+
+		argv[i] = NULL;
+
+		/*execute the command */
+		find_command_location(argv[0]);
+
+		/*free up allocated memory for argv */
+		for (i = 0; i < num_tokens - 1; i++)
+		{
+			free(argv[i]);
+		}
+
+		free(argv);
 	}
+
+	/*free up allocated memory */
+	free(lineptr_copy);
+	free(lineptr);
 
 	return (0);
 }
