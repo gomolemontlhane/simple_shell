@@ -17,5 +17,6 @@ void wait_for_child_process(void);
 char *read_command(void);
 void display_prompt(void);
 void tokenize_command(char *command);
+char *read_command_from_file(const char *filename);
 
 #endif /* SHELL_H */
