@@ -13,7 +13,7 @@ void tokenize_command(char *command)
 
 	while (token != NULL)
 	{
-		my_printf("Token: %s\n", token);
+		printf("Token: %s\n", token);
 		token = strtok(NULL, delimiters);
 	}
 }

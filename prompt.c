@@ -5,5 +5,5 @@
  */
 void display_prompt(void)
 {
-	my_printf(":) ");
+	printf(":) ");
 }

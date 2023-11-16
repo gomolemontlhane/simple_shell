@@ -3,15 +3,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <string.h>
 
 extern char **environ;
 
-void display_prompt(void);
-char *read_command(void);
-void tokenize_command(char *command);
+/* Function prototypes */
 void execute_command(char *command);
-void my_printf(const char *format, ...);
+void execute_child_process(char **args);
+void wait_for_child_process(void);
+char *read_command(void);
+void display_prompt(void);
+void tokenize_command(char *command);
 
 #endif /* SHELL_H */
