@@ -11,5 +11,5 @@ char *read_command(void)
 	size_t len = 0;
 
 	getline(&command, &len, stdin);
-	return command;
+	return (command);
 }

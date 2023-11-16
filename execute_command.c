@@ -8,7 +8,8 @@ void execute_command(char *command)
 {
 	if (access(command, X_OK) == 0)
 	{
-		char **args = malloc(2* sizeof(char*));
+		char **args = malloc(2 * sizeof(char *));
+
 		if (args == NULL)
 		{
 			perror("malloc");

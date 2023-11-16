@@ -1,5 +1,9 @@
 #include "shell.h"
-
+/**
+ * main - Entry point for the simple shell program
+ *
+ * Return: Always 0
+ */
 int main(void)
 {
 	char *command;
@@ -16,5 +20,5 @@ int main(void)
 		free(command);
 	}
 
-	return 0;
+	return (0);
 }
