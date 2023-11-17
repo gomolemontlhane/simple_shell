@@ -1,50 +1,37 @@
-#include "main.h"
-
-/**
- * main - open shell, project base
- * Return: int
- */
+#include "shell.h"
 
 int main(void)
 {
-	char *buff = NULL, **args;
-	size_t read_size = 0;
-	ssize_t buff_size = 0;
-	int exit_status = 0;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
 
-	while (1)
-	{
-		if (isatty(0))
-			printf("hsh$ ");
+    while (1)
+    {
+        if (isatty(STDIN_FILENO))
+            write(STDOUT_FILENO, "($)\n($) ", 8);
 
-		buff_size = getline(&buff, &read_size, stdin);
-		if (buff_size == -1 || _strcmp("exit\n", buff) == 0)
-		{
-			free(buff);
-			break;
-		}
-		buff[buff_size - 1] = '\0';
+        read = getline(&line, &len, stdin);
 
-		if (_strcmp("env", buff) == 0)
-		{
-			_env();
-			continue;
-		}
+        if (read == -1)
+        {
+            if (isatty(STDIN_FILENO))
+                write(STDOUT_FILENO, "\n", 1);
+            free(line);
+            exit(EXIT_SUCCESS);
+        }
 
-		if (empty_line(buff) == 1)
-		{
-			exit_status = 0;
-			continue;
-		}
+        if (line[read - 1] == '\n')
+            line[read - 1] = '\0';
 
-		args = _split(buff, " ");
-		args[0] = search_path(args[0]);
+        if (strcmp(line, "exit") == 0)
+        {
+            free(line);
+            exit(EXIT_SUCCESS);
+        }
 
-		if (args[0] != NULL)
-			exit_status = execute(args);
-		else
-			perror("Error");
-		free(args);
-	}
-	return (exit_status);
+        execute_command(line);
+    }
+
+    return (0);
 }
