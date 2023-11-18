@@ -1,6 +1,8 @@
 #ifndef SHELL_H
 #define SHELL_H
 
+#define MAX_ARGS 10
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,6 +12,7 @@
 
 /* Function prototypes */
 void prompt(void);
-int execute_command(char *command);
+void execute_command(char *command, char **args);
 
 #endif /* SHELL_H */
+
