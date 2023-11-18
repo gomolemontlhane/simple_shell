@@ -1,64 +1,73 @@
 #include "shell.h"
 
 /**
- *execute_command - Executes a command.
+ *execute_command - Execute the specified command with arguments.
  *@command: The command to execute.
- *
- *Return: Always returns 0.
+ *@args: The arguments for the command.
  */
-int execute_command(char *command)
+void execute_command(char *command, char **args)
 {
+	pid_t pid;
 	int status;
 
-	/*Fork a child process */
-	pid_t pid = fork();
+	pid = fork();
 
 	if (pid == -1)
 	{
 		perror("fork");
-		return (-1);
+		exit(EXIT_FAILURE);
 	}
 
-	if (pid == 0) /*Child process */
+	if (pid == 0)
 	{
-		char full_path[256];
-		char *cmd_args[2];
-
-		/*Check if the command is "env" */
-		if (strcmp(command, "env") == 0)
-		{
-			extern char **environ;
-			char *env_args[] = { "env", NULL
-			};
-
-			/*Print the current environment using execve */
-			if (execve("/usr/bin/env", env_args, environ) == -1)
+		/*Child process */
+		if (access(command, X_OK) == 0)
+		{ /*If the command is executable in the current directory, execute it */
+			if (execvp(command, args) == -1)
 			{
-				perror("execve");
+				perror("execvp");
 				exit(EXIT_FAILURE);
 			}
 		}
+		else
+		{ /*Search for the command in the PATH */
+			char *path = getenv("PATH");
+			char *token;
+			char *full_path;
 
-		/*Construct the full path for the command in /bin/ */
-		snprintf(full_path, sizeof(full_path), "/bin/%s", command);
+			token = strtok(path, ":");
+			while (token != NULL)
+			{ /*Check if the command exists in the current PATH directory */
+				full_path = malloc(strlen(token) + strlen(command) + 2);
+				if (full_path == NULL)
+				{
+					perror("malloc");
+					exit(EXIT_FAILURE);
+				}
 
-		cmd_args[0] = full_path;
-		cmd_args[1] = NULL;
+				sprintf(full_path, "%s/%s", token, command);
 
-		/*Execute the command using execv */
-		if (execv(full_path, cmd_args) == -1)
-		{
-			perror("execv");
+				if (access(full_path, X_OK) == 0)
+				{/*If found, execute the command */
+					if (execv(full_path, args) == -1)
+					{
+						perror("execv");
+						exit(EXIT_FAILURE);
+					}
+				}
+
+				free(full_path);
+				token = strtok(NULL, ":");
+			}
+
+			/*If the command is not found in any PATH directory, print an error */
+			fprintf(stderr, "%s: command not found\n", command);
 			exit(EXIT_FAILURE);
 		}
-
-		exit(EXIT_SUCCESS); /*Exit child process */
 	}
-	else /*Parent process */
+	else
 	{
+		/*Parent process */
 		waitpid(pid, &status, 0);
 	}
-
-	return (0);
 }
-

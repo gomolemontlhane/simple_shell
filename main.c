@@ -1,37 +1,49 @@
 #include "shell.h"
 
+/**
+ *main - Simple shell main function
+ *Return: Always 0
+ */
 int main(void)
 {
 	char *line = NULL;
 	size_t len = 0;
-	ssize_t read;
+	char *args[MAX_ARGS];
+	int i;
 
 	while (1)
 	{
-		if (isatty(STDIN_FILENO))
-			write(STDOUT_FILENO, "($)\n($) ", 8);
+		printf("($) ");
+		getline(&line, &len, stdin);
 
-		read = getline(&line, &len, stdin);
-
-		if (read == -1)
+		/*Tokenize the input line */
+		args[0] = strtok(line, " \n");
+		if (args[0] == NULL)
 		{
-			if (isatty(STDIN_FILENO))
-				write(STDOUT_FILENO, "\n", 1);
+			continue;
+		}
+
+		for (i = 1; i < MAX_ARGS; i++)
+		{
+			args[i] = strtok(NULL, " \n");
+			if (args[i] == NULL)
+			{
+				break;
+			}
+		}
+
+		/*Check for the "exit" command */
+		if (strcmp(args[0], "exit") == 0)
+		{
 			free(line);
 			exit(EXIT_SUCCESS);
 		}
 
-		if (line[read - 1] == '\n')
-			line[read - 1] = '\0';
-
-		if (strcmp(line, "exit") == 0)
-		{
-			free(line);
-			exit(EXIT_SUCCESS);
-		}
-
-		execute_command(line);
+		/*Execute the command */
+		execute_command(args[0], args);
 	}
 
+	free(line);
 	return (0);
 }
+
